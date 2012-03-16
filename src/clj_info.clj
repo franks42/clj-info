@@ -45,16 +45,6 @@
         (= (type n) clojure.lang.Cons) `(tdoc* ~(str (second n)))))
 
 
-(defn use-tdoc-as-doc 
-  "Use tdoc for doc at the REPL.
-  ns-unmap's clojure.core/doc and replaces local ns-var doc-binding
-  with clj-info.core/tdoc."
-  [] 
-  (ns-unmap *ns* 'doc)
-  ;;(refer 'clj-info :only '[tdoc] :rename {'tdoc 'doc}))
-  (refer 'clj-info :rename {'tdoc 'doc}))
-
-
 ;; browser-doc - generates html-formated docs
 
 (defn bdoc*
@@ -110,19 +100,25 @@
         (= (type w) clojure.lang.Cons) `(edoc* ~(str (second w)))))
 
 
-;; generic entry oint for help and documentation
+;; generic single entry point for help and documentation
 
-(def ^:dynamic *info-fun-map* {:text tdoc* :html bdoc*})
-(def ^:dynamic *info-output* :text)
+(def ^:dynamic *info-fn-map* {:text tdoc* :html bdoc*})
+(def ^:dynamic *info-output-choice* :text)
+(defn add-info-fn-map
+  "Convenience function to add additional handlers 
+  that present doc-info in different formats across namespaces."
+  [k f]
+  (def ^:dynamic *info-fn-map* (assoc *info-fn-map* k f)))
+
 
 (defn info*
   ""
   [n]
   (if (keyword? n) 
-    (if (n (set (keys *info-fun-map*)))
-      (def ^:dynamic *info-output* n)
+    (if (n (set (keys *info-fn-map*)))
+      (def ^:dynamic *info-output-choice* n)
       (info* (str n)))
-    ((*info-output* *info-fun-map*) n)))
+    ((*info-output-choice* *info-fn-map*) n)))
 
 
 (defmacro info
