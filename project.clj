@@ -1,4 +1,4 @@
-(defproject clj-info "0.2.0"
+(defproject clj-info "0.2.1"
   :description "Enhanced clojure doc-info facility for use in REPL and beyond."
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [hiccup "0.3.8"]]

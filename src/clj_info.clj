@@ -132,6 +132,3 @@
 (defmacro help [n] `(clj-info/info ~n))
 
 ;;
-
-(defn -main [& args])
-
