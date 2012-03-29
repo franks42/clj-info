@@ -8,15 +8,16 @@
 
 (ns clj-info.doc2map
   "Set of functions to enhance the runtime available documentation for
-  clojure. Protocol with interfaces to collect doc-info from 
-  clojure-entities. Functions to render doc-info in either text or 
+  clojure. Protocol with interfaces to collect doc-info from
+  clojure-entities. Functions to render doc-info in either text or
   html. More user-friendly \"clojure.repl/doc\"-like macros/functions
   to present doc-info in various representations"
-	(:require  [clj-info.doc-info-EN :only doc-info-map]
+	(:require  [clj-info.doc-info-EN]
 	           [clojure.string :as s]
 	           [hiccup.core :as h]
 	           [clojure.repl]
-	           [clojure.set]))
+	           [clojure.set]
+	           [clojure.java.javadoc]))
 
 
 (defprotocol docsmap
@@ -27,53 +28,59 @@
 (extend-type clojure.lang.PersistentArrayMap
   ; see if we're dealing with a protocol object
   docsmap
-  (docs-map [o] 
+  (docs-map [o]
     (when (:on-interface o)
-      {:protocol-def true 
+      {:protocol-def true
        :object-type-str "Protocol"
-       :sigs (:sigs o), 
+       :sigs (:sigs o),
        :extenders (extenders o)})))
 
 
 (extend-type java.lang.Class
   docsmap
-  (docs-map [jtype] 
-    {:name (.getName jtype) 
-     :java-class true 
+  (docs-map [jtype]
+    {:name (.getName jtype)
+     :java-class true
      :object-type-str "java.lang.Class"
      :url (#'clojure.java.javadoc/javadoc-url (.getName jtype))}))
 
 
 (extend-type clojure.lang.Namespace
   docsmap
-  (docs-map [nspace] 
-    (assoc (meta nspace) 
-            :name (ns-name nspace) 
+  (docs-map [nspace]
+    (assoc (meta nspace)
+            :name (ns-name nspace)
             :object-type-str "Namespace"
             :namespace true)))
 
 
 (defn all-other-fqv [v]
   (let [s (.sym v)]
-    (clojure.set/difference (clojure.set/select #(not (nil? %)) (set (for [n (all-ns)] (ns-resolve n s)))) #{v})))
+    (clojure.set/difference
+      (clojure.set/select #(not (nil? %))
+                          (set (for [n (all-ns)] (ns-resolve n s))))
+      #{v})))
 
 
 (extend-type clojure.lang.Var
   docsmap
-  (docs-map [v] 
+  (docs-map [v]
     (let [m0 (meta v)
-          m1 (assoc m0 
-                    :fqname (str (when-let [ns (:ns m0)] (str (ns-name ns) "/"))
+          m1 (assoc m0
+                    :fqname (str (when-let [ns (:ns m0)]
+                                    (str (ns-name ns) "/"))
                                  (:name m0))
                     :all-other-fqv (all-other-fqv v))
           m  (cond
-                (:special-form m1)  (assoc m1 :object-type-str "Special Form")
-                (:macro m1)         (assoc m1 :object-type-str "Macro")
+                (:special-form m1)  (assoc m1 :object-type-str
+                                                "Special Form")
+                (:macro m1)         (assoc m1 :object-type-str
+                                                "Macro")
                 (not (:arglists m1)) m1
                 :else               (assoc m1 :function true
                                               :object-type-str "Function"))]
-      (cond 
-        (:protocol m) (assoc m :protocol-member-fn true 
+      (cond
+        (:protocol m) (assoc m :protocol-member-fn true
                                :object-type-str "Member Interface/Function")
         (extends? docsmap (type @v)) (merge m (docs-map @v))
         true m))))
@@ -81,7 +88,7 @@
 
 (extend-type clojure.lang.Symbol
   docsmap
-  (docs-map [s] 
+  (docs-map [s]
     (cond
       (#'clojure.repl/special-doc-map s)
       ;; I know that clojure.repl/special-doc-map is private...
@@ -90,13 +97,13 @@
                 :object-type-str "Special Form"
                 :special-form true)
      (find-ns s) (docs-map (find-ns s))
-     (try (resolve s) (catch Exception e)) (when (extends? docsmap (type (resolve s))) 
+     (try (resolve s) (catch Exception e)) (when (extends? docsmap (type (resolve s)))
                     (docs-map (resolve s))))))
 
 
 (extend-type java.lang.String
   docsmap
-  (docs-map [astring] 
+  (docs-map [astring]
     (if-let [s (symbol astring)]
       (docs-map s))))
 
