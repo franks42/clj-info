@@ -9,7 +9,8 @@
 (ns clj-info
   "Set of functions and macros to present the online/real-time documentation
   in different formats."
-  (:require [clojure.repl])
+  (:require [clojure.repl]
+            [clojure.java.shell])
   (:use [clj-info.doc2txt :only [doc2txt]]
         [clj-info.doc2html :only [doc2html]]
         [clojure.java.browse]))
@@ -51,6 +52,9 @@
   "Function that writes html-formatted doc-info for identifier w (string)
   to (default) file f or stdout if f explicit nil."
   ([w]
+    (let [d (str (System/getProperty "user.home") "/.cljsh_output_dir")]
+      (:exit (clojure.java.shell/sh "bash" "-c"
+        (str "if [ ! -d " d " ]; then mkdir "d ";fi"))))
     (let [f (str (System/getProperty "user.home")
                   "/.cljsh_output_dir/cljsh_output.html")]
       (bdoc* w f)
