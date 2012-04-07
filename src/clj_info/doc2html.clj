@@ -16,22 +16,22 @@
 
 (def ^:dynamic *clj-source-home* (str (System/getProperty "user.home") "/Development/Clojure/clojure/src/clj/clojure"))
 
-(def ^:dynamic *clj-info-ccs* 
-  (h/html 
-    [:style {:type"text/css"} 
+(def ^:dynamic *clj-info-ccs*
+  (h/html
+    [:style {:type"text/css"}
       " body {
           font-family: arial, helvetica, sans-serif;
           font-size: 0.8em;
         }
-        
+
         h1 {
           font-size: 2em;
         }
-        
+
         h2 {
           font-size: 1.5em;
         }
-        
+
         a {
           text-decoration: none;
         }
@@ -81,8 +81,8 @@
     ]))
 
 (def ^:dynamic *clj-body-js*
-  (h/html 
-    [:script {:type "text/javascript"} 
+  (h/html
+    [:script {:type "text/javascript"}
       (h/h "window.onload = function() { scrollTo(0,0);}" )
     ]))
 
@@ -94,7 +94,7 @@
   [w]
   (let [m0  (get-docs-map w)
         m1  (if (:special-form m0)
-             (assoc m0 :url 
+             (assoc m0 :url
                          (if (contains? m0 :url)
                            (str "http://clojure.org/" (:url m0))
                            (str "http://clojure.org/special_forms#" (:name m0))))
@@ -106,9 +106,9 @@
             (if (:special-form m1)
               (assoc m1 :clojuredocs-ref (str "http://clojuredocs.org/clojure_core/clojure.core/" (:name m1)))
               m1))
-              
+
         page	(if m (h/html
-        
+
             [:h1.cljdoc-heading
             (if (:clojuredocs-ref m)
               [:div.cljdoc-heading-name [:a {:href (:clojuredocs-ref m)} (str (or (:fqname m)(:name m)))]]
@@ -119,14 +119,14 @@
                         (:special-form m) [:div.cljdoc-type-sf (:object-type-str m) ]
                         (:function m) [:div.cljdoc-type-fn (:object-type-str m) ]
                         :else (:object-type-str m))]]
-                    
+
             (when (:protocol m) (h/html
               [:div.cljdoc-sub-heading [:h4 (str "Protocol: " (s/replace-first (str (:protocol m)) "#'" ""))]]))
-             
+
             (when (:forms m) (h/html
               [:div.cljdoc-sub-heading [:h4 "Forms"]]
               [:ul (for [x (map h/h (map str (:forms m)))] [:li x])]))
-             
+
             (when (:arglists m) (h/html
               [:div.cljdoc-sub-heading [:h4 "Arity"]]
               ;[:ul (for [x (map h/h (map str (:arglists m)))] [:li x])]))
@@ -140,18 +140,18 @@
               [:h4 "Interface Signatures:"]
               ;[:ul (for [x (map (fn [y] h/h (name y)) (map first (:sigs m)))] [:li x])]))
               [:ul (for [x (map (fn [y] [:a {:href (str "cljdoc://?" (name y))} (name y)]) (map first (:sigs m)))] [:li x])]))
-              
+
             (when (:extenders m) (h/html
               [:h4 "Extenders:"]
               ;[:ul (for [x (map h/h (map str (:extenders m)))] [:li x])]
-              [:ul (for [x (map (fn [e] [:a {:href (str "cljdoc://?" e)} e]) 
+              [:ul (for [x (map (fn [e] [:a {:href (str "cljdoc://?" e)} e])
                 (map (fn [ee] (if (= (type ee) java.lang.Class) (.getName ee)(str ee))) (:extenders m)))] [:li x])]))
-            
+
             (when-let [fqvs (:all-other-fqv m)]
               (when (pos? (count fqvs)) (h/html
                 [:h4 "Alternative Vars:"]
                 (ul (map str fqvs)))))
-            
+
             (when (or (:url m)(:clojuredocs-ref m)) (h/html
               [:h4 "Refs: "]
               (when (:url m) [:a {:href (:url m)} (:url m)])
@@ -160,17 +160,17 @@
 
             (when (:file m) (h/html
               [:h4 "Source File: "
-              [:a {:href (str "txmt://open/?url=file:" 
-                (s/replace-first (:file m) #"^clojure" *clj-source-home* ) 
-                (if (:line m) (str "&line=" (:line m)) ""))} 
+              [:a {:href (str "txmt://open/?url=file:"
+                (s/replace-first (:file m) #"^clojure" *clj-source-home* )
+                (if (:line m) (str "&line=" (:line m)) ""))}
                 (:file m)]]))
-                
+
             (when-let [source-str (and (not (:namespace m))
-                                       (clojure.repl/source-fn (symbol w)))] 
+                                       (clojure.repl/source-fn (symbol w)))]
               (h/html
               [:h4.cljdoc-source-heading "Source: "]
               [:div.cljdoc-source-body [:pre (h/h source-str)]])))
-          
+
           (h/html [:h2 (str "Sorry, no doc-info for \"" w "\"")] ))
 
        ]
@@ -179,3 +179,72 @@
        ;;(h/html [:div {:class "cljdoc-entry"} page])))
        (h/html [:html [:head *clj-info-ccs* ] [:body *clj-body-js*  [:div {:class "cljdoc-entry"} page]]])))
 
+
+(defn doc2simple-html
+  "generates simple html-page for the docs-map info obtained for word w"
+  [w]
+  (let [m0  (get-docs-map w)
+        m1  (if (:special-form m0)
+             (assoc m0 :url
+                         (if (contains? m0 :url)
+                           (str "http://clojure.org/" (:url m0))
+                           (str "http://clojure.org/special_forms#" (:name m0))))
+             m0)
+        m (if-let [n (:fqname m1)]
+            (if (re-find #"^clojure" n)
+              (assoc m1 :clojuredocs-ref (str "http://clojuredocs.org/clojure_core/" n))
+              m1)
+            (if (:special-form m1)
+              (assoc m1 :clojuredocs-ref (str "http://clojuredocs.org/clojure_core/clojure.core/" (:name m1)))
+              m1))
+
+        page	(if m (h/html
+
+            [:h2
+            (if (:clojuredocs-ref m)
+              [:a {:href (:clojuredocs-ref m)} (str (or (:fqname m)(:name m)))]
+              (str (or (:fqname m)(:name m))))
+            " -       "
+            (when (:private m) "Private ")
+              (cond (:macro m) (:object-type-str m)
+                    (:special-form m) (:object-type-str m)
+                    (:function m) (:object-type-str m)
+                    :else (:object-type-str m))]
+
+            (when (:protocol m) (h/html
+              [:h3 (str "Protocol: " (s/replace-first (str (:protocol m)) "#'" ""))]))
+
+            (when (:forms m) (h/html
+              [:h3 "Forms"]
+              [:ul (for [x (map h/h (map str (:forms m)))] [:li x])]))
+
+            (when (:arglists m) (h/html
+              [:h3 "Arity"]
+              ;[:ul (for [x (map h/h (map str (:arglists m)))] [:li x])]))
+              (ul (:arglists m))))
+
+            (when (:doc m) (h/html
+              [:h3 "Documentation"]
+              [:pre (h/h (str "  " (:doc m)))]))
+
+            (when (:sigs m) (h/html
+              [:h3 "Interface Signatures:"]
+              ;[:ul (for [x (map (fn [y] h/h (name y)) (map first (:sigs m)))] [:li x])]))
+              [:ul (for [x (map (fn [y] [:a {:href (str "cljdoc://?" (name y))} (name y)]) (map first (:sigs m)))] [:li x])]))
+
+            (when (:extenders m) (h/html
+              [:h3 "Extenders:"]
+              ;[:ul (for [x (map h/h (map str (:extenders m)))] [:li x])]
+              [:ul (for [x (map (fn [e] [:a {:href (str "cljdoc://?" e)} e])
+                (map (fn [ee] (if (= (type ee) java.lang.Class) (.getName ee)(str ee))) (:extenders m)))] [:li x])]))
+
+            (when-let [fqvs (:all-other-fqv m)]
+              (when (pos? (count fqvs)) (h/html
+                [:h3 "Alternative Vars:"]
+                (ul (map str fqvs))))))
+
+          (h/html [:h2 (str "Sorry, no doc-info for \"" w "\"")] ))
+
+       ]
+       (println w m)
+       (h/html [:html page])))

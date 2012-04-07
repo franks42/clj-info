@@ -19,7 +19,7 @@
   [w]
   (let [m0  (get-docs-map w)
         m1  (if (:special-form m0)
-             (assoc m0 :url 
+             (assoc m0 :url
                          (if (contains? m0 :url)
                            (str "http://clojure.org/" (:url m0))
                            (str "http://clojure.org/special_forms#" (:name m0))))
@@ -31,31 +31,52 @@
             (if (:special-form m1)
               (assoc m1 :clojuredocs-ref (str "http://clojuredocs.org/clojure_core/clojure.core/" (:name m1)))
               m1))
-              
-        title (if m 
+
+        title (if m
                 (str  (or (:fqname m)(:name m))
                       "   -   "
                       (when (:private m) "Private ")
                       (:object-type-str m))
                 (str "Sorry, no doc-info for \"" w "\""))
-            
-        message (if m 
-          (str 
-            (when (:protocol m) 
-              (str  \newline "Protocol: " 
+
+        message (if m
+          (str
+
+            (when (:protocol m)
+              (str  \newline "Protocol: "
                     (s/replace-first (str (:protocol m)) "#'" "")))
-            (when (:forms m) 
+
+            (when (:forms m)
               (str \newline (doall (apply str (map pr-str (:forms m))))))
-            (when (:arglists m) 
+
+            (when (:arglists m)
               (str  \newline (doall (apply str (map pr-str (:arglists m))))))
-            (when (:doc m) 
+
+            (when (:doc m)
               (str  ;\newline "Documentation:"
                     \newline "  " (:doc m)))
+
+            (when-let [all-sigs (:sigs m)]
+              (when (pos? (count all-sigs))
+                (let [sigs-names (map (fn [s] (name (first s))) (:sigs m))]
+                  (str \newline "Interface Signatures:"
+                    (apply str (map (fn [x] (str \newline "  " x)) sigs-names))))))
+
+            (when-let [all-extenders (:extenders m)]
+              (when (pos? (count all-extenders))
+                (str \newline "Extenders:"
+                  (apply str (map (fn [x] (str \newline "  "
+                                    (if (= (type x) java.lang.Class)
+                                      (.getName x)
+                                      (str x))))
+                                  all-extenders)))))
+
             (when-let [fqvs (:all-other-fqv m)]
               (when (pos? (count fqvs))
                 (str \newline "Alternative Vars:"
                   (apply str (map (fn [x] (str \newline "  " x)) fqvs)))))
-            (when (or (:url m)(:clojuredocs-ref m)) 
+
+            (when (or (:url m)(:clojuredocs-ref m))
               (str \newline "Refs: "
                 (when (:url m) (str \newline "  " (:url m)))
                 (when (:clojuredocs-ref m) (str \newline "  " (:clojuredocs-ref m))))))

@@ -29,11 +29,19 @@
   ; see if we're dealing with a protocol object
   docsmap
   (docs-map [o]
-    (when (:on-interface o)
+    (if (:on-interface o)
       {:protocol-def true
        :object-type-str "Protocol"
        :sigs (:sigs o),
-       :extenders (extenders o)})))
+       :extenders (extenders o)}
+      {:object-type-str "Var => clojure.lang.PersistentArrayMap"
+       :var-def true})))
+
+
+(extend-type clojure.lang.Atom
+  docsmap
+  (docs-map [atomtype]
+    {:object-type-str (str atomtype " => " (type @atomtype))}))
 
 
 (extend-type java.lang.Class
@@ -81,9 +89,12 @@
                                               :object-type-str "Function"))]
       (cond
         (:protocol m) (assoc m :protocol-member-fn true
-                               :object-type-str "Member Interface/Function")
+                               :object-type-str "Protocol Interface/Function")
         (extends? docsmap (type @v)) (merge m (docs-map @v))
-        true m))))
+        true (if (get m :object-type-str)
+               m
+               (assoc m :var-def true
+                        :object-type-str (str "Var => " (or (type @v) "nil"))))))))
 
 
 (extend-type clojure.lang.Symbol
@@ -104,8 +115,7 @@
 (extend-type java.lang.String
   docsmap
   (docs-map [astring]
-    (if-let [s (symbol astring)]
-      (docs-map s))))
+    {:object-type-str "java.lang.String"}))
 
 ;;
 
@@ -124,6 +134,7 @@
 (defn get-docs-map
   "Entry function to obtain map with doc-info for object n."
   [n]
-  (merge-newdocs (docs-map n) n))
+  (let [s (if (string? n) (symbol n) n)]
+    (merge-newdocs (docs-map s) s)))
 
 
