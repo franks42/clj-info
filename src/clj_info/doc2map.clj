@@ -112,10 +112,10 @@
                     (docs-map (resolve s))))))
 
 
-(extend-type java.lang.String
+(extend-type clojure.lang.MultiFn
   docsmap
   (docs-map [astring]
-    {:object-type-str "java.lang.String"}))
+    {:object-type-str "Multimethod"}))
 
 ;;
 
