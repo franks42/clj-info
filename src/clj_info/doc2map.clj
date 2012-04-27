@@ -107,6 +107,10 @@
                 :name (name s)
                 :object-type-str "Special Form"
                 :special-form true)
+      (special-symbol? s)
+        {:name (name s)
+         :object-type-str "Special Symbol"
+         :special-form true}
      (find-ns s) (docs-map (find-ns s))
      (try (resolve s) (catch Exception e)) (when (extends? docsmap (type (resolve s)))
                     (docs-map (resolve s))))))
