@@ -15,7 +15,7 @@
         [clj-info.doc2html :only [doc2html]]
         [clojure.java.browse]))
 
-(def clj-info-version "0.2.3")
+(def clj-info-version "0.2.4-SNAPSHOT")
 
 ;;;;;;;;;;;;;;;
 
