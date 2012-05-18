@@ -50,7 +50,7 @@
               (str \newline (doall (apply str (map pr-str (:forms m))))))
 
             (when (:arglists m)
-              (str  \newline (doall (apply str (map pr-str (:arglists m))))))
+              (str  \newline (s/join "\n" (map pr-str (:arglists m)))))
 
             (when (:doc m)
               (str  ;\newline "Documentation:"
