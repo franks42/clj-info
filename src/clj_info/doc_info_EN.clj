@@ -35,7 +35,13 @@
   and may return improper keywords with undefined behavior for
   non-conformant ns and name."}
   
- "FQN-goes-here" {:doc
+ "cljs.core/js->cljs" {:object-type-str "Cljs Function" :doc
+  "For a given javascript object, array, string, boolean, or number,
+  \"j\", return the equivalent representations as a cljs-datatype."
+  :arglists '([j])}
+  
+ "FQN-goes-here" {
+  :arglists "([] [x] [x y] [x y & more])" :doc
   "New docs are right here.
   Keep indent at 2 space on the left to ensure correct formatting, also
   try not to extend the lines beyond the \"maximum width ruler\" 
@@ -48,4 +54,8 @@
   otherwise the formatting gets ugly."}
 ;;---------------------maximum width ruler------------------------------
 })
+
+(defn read-doc-info-map []
+  (let [s (slurp "doc-info-map.clj")]
+    (def doc-info-map (read-string s))))
 

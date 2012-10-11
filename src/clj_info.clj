@@ -12,10 +12,11 @@
   (:require [clojure.repl]
             [clojure.java.shell])
   (:use [clj-info.doc2txt :only [doc2txt]]
+        [clj-info.doc2map :only [get-docs-map]]
         [clj-info.doc2html :only [doc2html]]
         [clojure.java.browse]))
 
-(def clj-info-version "0.2.6")
+(def clj-info-version "0.3.0-SNAPSHOT")
 
 ;;;;;;;;;;;;;;;
 
@@ -27,6 +28,7 @@
   than clojure.core/doc)
   Name n is string or (quoted) symbol.
   Output is written to stdout, or file f."
+  ([] (tdoc* "tdoc*"))
   ([w] (let [m (doc2txt w)]
           (println "----------------------------------------------------------------------")
           (print (:title m) (:message m))(symbol "")))
@@ -41,10 +43,39 @@
   "Prints documentation for a var, namespace, or special form given
   its name. (generates more info than clojure.core/doc)
   Name n is string, symbol, or quoted symbol."
-  [n]
+  ([] (tdoc* "tdoc"))
+  ([n]
   (cond (string? n) `(tdoc* ~n)
         (symbol? n) `(tdoc* ~(str n))
-        (= (type n) clojure.lang.Cons) `(tdoc* ~(str (second n)))))
+        (= (type n) clojure.lang.Cons) `(tdoc* ~(str (second n))))))
+
+
+(defn clj-doc*
+  "Function that writes text-formatted documentation for a var,
+  namespace, or special form given its name. (generates more info
+  than clojure.core/doc)
+  Name n is string or (quoted) symbol.
+  Output is written to stdout, or file f."
+  ([] (clj-doc* "clj-doc*"))
+  ([w] (let [m (doc2txt w)]
+          (println "----------------------------------------------------------------------")
+          (print (:title m) (:message m))(symbol "")))
+  ([w f & f-opts] (if f
+                    (let [m (doc2txt w)]
+                      (apply spit f (str (:title m) (:message m)) f-opts))
+                    (clj-doc* w (str (System/getProperty "user.home")
+                                   "/.cljsh_output_dir/cljsh_output.txt")))))
+
+
+(defmacro clj-doc
+  "Prints documentation for a var, namespace, or special form given
+  its name. (generates more info than clojure.core/doc)
+  Name n is string, symbol, or quoted symbol."
+  ([] (clj-doc* "clj-doc"))
+  ([n]
+  (cond (string? n) `(clj-doc* ~n)
+        (symbol? n) `(clj-doc* ~(str n))
+        (= (type n) clojure.lang.Cons) `(clj-doc* ~(str (second n))))))
 
 
 ;; browser-doc - generates html-formated docs

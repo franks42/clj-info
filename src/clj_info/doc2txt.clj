@@ -25,7 +25,7 @@
                            (str "http://clojure.org/special_forms#" (:name m0))))
              m0)
         m (if-let [n (:fqname m1)]
-            (if (re-find #"^clojure" n)
+            (if (re-find #"^clojure" (str n))
               (assoc m1 :clojuredocs-ref (str "http://clojuredocs.org/clojure_core/" n))
               m1)
             (if (:special-form m1)
@@ -50,7 +50,10 @@
               (str \newline (doall (apply str (map pr-str (:forms m))))))
 
             (when (:arglists m)
-              (str  \newline (doall (apply str (map pr-str (:arglists m))))))
+              (str  \newline 
+                (if (string? (:arglists m)) 
+                  (:arglists m) 
+                  (doall (apply str (map pr-str (:arglists m)))))))
 
             (when (:doc m)
               (str  ;\newline "Documentation:"
@@ -80,7 +83,8 @@
               (str \newline "Refs: "
                 (when (:url m) (str \newline "  " (:url m)))
                 (when (:clojuredocs-ref m) (str \newline "  " (:clojuredocs-ref m))))))
-          "")]
+          "")
+          ]
     {:title title :message message}))
 
 
