@@ -1,4 +1,4 @@
-(defproject clj-info "0.3.1-SNAPSHOT"
+(defproject clj-info "0.3.1"
   :description "Enhanced clojure doc-info facility for use in REPL and beyond."
   :url "https://github.com/franks42/clj-info"
   :license {:name "Eclipse Public License"
