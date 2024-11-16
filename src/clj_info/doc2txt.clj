@@ -1,6 +1,6 @@
 ;; Copyright (c) Frank Siebenlist. All rights reserved.
 ;; The use and distribution terms for this software are covered by the
-;; Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;; Eclipse Public License 1.0 (https://opensource.org/licenses/eclipse-1.0.php)
 ;; which can be found in the file COPYING at the root of this distribution.
 ;; By using this software in any fashion, you are agreeing to be bound by
 ;; the terms of this license.
@@ -21,15 +21,15 @@
         m1  (if (:special-form m0)
              (assoc m0 :url
                          (if (contains? m0 :url)
-                           (str "http://clojure.org/" (:url m0))
-                           (str "http://clojure.org/special_forms#" (:name m0))))
+                           (str "https://clojure.org/" (:url m0))
+                           (str "https://clojure.org/special_forms#" (:name m0))))
              m0)
         m (if-let [n (:fqname m1)]
             (if (re-find #"^clojure" (str n))
-              (assoc m1 :clojuredocs-ref (str "http://clojuredocs.org/clojure_core/" n))
+              (assoc m1 :clojuredocs-ref (str "https://clojuredocs.org/clojure_core/" n))
               m1)
             (if (:special-form m1)
-              (assoc m1 :clojuredocs-ref (str "http://clojuredocs.org/clojure_core/clojure.core/" (:name m1)))
+              (assoc m1 :clojuredocs-ref (str "https://clojuredocs.org/clojure_core/clojure.core/" (:name m1)))
               m1))
 
         title (if m

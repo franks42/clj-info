@@ -1,6 +1,6 @@
 ;; Copyright (c) Frank Siebenlist. All rights reserved.
 ;; The use and distribution terms for this software are covered by the
-;; Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;; Eclipse Public License 1.0 (https://opensource.org/licenses/eclipse-1.0.php)
 ;; which can be found in the file COPYING at the root of this distribution.
 ;; By using this software in any fashion, you are agreeing to be bound by
 ;; the terms of this license.
@@ -18,7 +18,7 @@
   (symbol ns name): ns and name must both be string.
   A symbol string, begins with a non-numeric character 
   and can contain alphanumeric characters and *, +, !, -, _, and ?.
-  (see \"http://clojure.org/reader\" for details).
+  (see \"https://clojure.org/reader\" for details).
   Note that function does not validate input strings for ns and name, 
   and may return improper symbols with undefined behavior for 
   non-conformant ns and name."}
@@ -30,7 +30,7 @@
   (keyword ns name): ns and name must both be string.
   A keyword string, like a symbol, begins with a non-numeric character
   and can contain alphanumeric characters and *, +, !, -, _, and ?.
-  (see \"http://clojure.org/reader\" for details).
+  (see \"https://clojure.org/reader\" for details).
   Note that function does not validate input strings for ns and name,
   and may return improper keywords with undefined behavior for
   non-conformant ns and name."}
