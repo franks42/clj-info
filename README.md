@@ -21,17 +21,17 @@ An enhanced Clojure documentation facility that provides **better docs than `doc
 
 **Leiningen/Boot:**
 ```clojure
-[clj-info "0.5.0"]
+[clj-info "0.5.1"]
 ```
 
 **Clojure CLI/deps.edn:**
 ```clojure
-clj-info/clj-info {:mvn/version "0.5.0"}
+clj-info/clj-info {:mvn/version "0.5.1"}
 ```
 
 **Babashka bb.edn:**
 ```clojure
-{:deps {clj-info/clj-info {:mvn/version "0.5.0"}}}
+{:deps {clj-info/clj-info {:mvn/version "0.5.1"}}}
 ```
 
 ### Basic Usage
@@ -202,6 +202,12 @@ lein repl :connect 7888
 ```
 
 ## Version History
+
+### 0.5.1 (2024-10-28) - ClojureDocs Integration & Documentation
+- ✅ **Comprehensive ClojureDocs integration** across all output formats
+- ✅ **Complete documentation overhaul** with modern README and changelog
+- ✅ **Interactive development tools** including Babashka nREPL server
+- ✅ **Cross-format consistency** for reference links and URLs
 
 ### 0.5.0 (2024-10-28) - Major Modernization Release
 - ✅ **Full Babashka compatibility** via SCI extensions

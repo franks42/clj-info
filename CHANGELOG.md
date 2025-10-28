@@ -5,6 +5,33 @@ All notable changes to clj-info will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2024-10-28 - ClojureDocs Integration & Documentation Update
+
+### Added
+- **Comprehensive ClojureDocs integration** across all output formats
+- **Updated README.md** with complete modern documentation and examples
+- **CHANGELOG.md** for version history tracking
+- **Interactive nREPL server** (`bb_nrepl_server.clj`) for easy testing
+
+### Enhanced
+- **ClojureDocs URLs** now included in all output formats:
+  - Rich terminal formatting (Source Information table)
+  - Markdown export (References section) 
+  - JSON/EDN data export (`clojuredocs-ref` field)
+  - Text output (existing Refs section)
+  - HTML output (already working)
+
+### Fixed
+- **ClojureDocs URL format** corrected from `clojure_core` to `clojure.core`
+- **URL generation** now works for all Clojure core functions
+- **Cross-format consistency** for reference links
+
+### Documentation  
+- **Complete README rewrite** with modern examples, badges, and comprehensive API docs
+- **Migration guide** from 0.4.2 to 0.5.x
+- **Development setup** instructions and contribution guidelines
+- **Multi-format usage examples** for all output types
+
 ## [0.5.0] - 2024-10-28 - Major Modernization Release
 
 ### Added

@@ -21,7 +21,7 @@
             ; [clojure.java.browse :refer [browse-url]] ; Commented out for Babashka compatibility
             ))
 
-(def clj-info-version "0.5.0")
+(def clj-info-version "0.5.1")
 
 ;;;;;;;;;;;;;;;
 
