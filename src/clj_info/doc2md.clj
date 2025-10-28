@@ -109,14 +109,27 @@
          (format-code-block examples) "\n")))
 
 (defn- format-see-also
-  "Format see-also section (placeholder for future enhancement)."
+  "Format see-also and references section with ClojureDocs URLs."
   [doc-map]
-  (when-let [see-also (:see-also doc-map)]
-    (str "\n## See Also\n\n"
-         (->> see-also
-              (map #(str "- " (format-inline-code (str %))))
-              (str/join "\n"))
-         "\n")))
+  (let [see-also (:see-also doc-map)
+        clojuredocs-ref (:clojuredocs-ref doc-map)
+        javadoc-url (:url doc-map)
+        has-refs (or see-also clojuredocs-ref javadoc-url)]
+    (when has-refs
+      (str "\n## References\n\n"
+           ;; ClojureDocs reference
+           (when clojuredocs-ref
+             (str "- [ClojureDocs](" clojuredocs-ref ")\n"))
+           ;; Javadoc URL  
+           (when javadoc-url
+             (str "- [Javadoc](" javadoc-url ")\n"))
+           ;; See also items
+           (when see-also
+             (->> see-also
+                  (map #(str "- " (format-inline-code (str %))))
+                  (str/join "\n")
+                  (str "\n### See Also\n\n")))
+           "\n"))))
 
 (defn doc->md
   "Convert documentation info to Markdown format.
@@ -134,7 +147,15 @@
   - Escaped special characters
   - Type badges and visual indicators"
   [x]
-  (let [doc-map (get-docs-map x)]
+  (let [base-doc-map (get-docs-map x)
+        ;; Add ClojureDocs URL similar to doc2txt
+        doc-map (if-let [n (:fqname base-doc-map)]
+                  (if (re-find #"^clojure" (str n))
+                    (assoc base-doc-map :clojuredocs-ref (str "https://clojuredocs.org/" n))
+                    base-doc-map)
+                  (if (:special-form base-doc-map)
+                    (assoc base-doc-map :clojuredocs-ref (str "https://clojuredocs.org/clojure.core/" (:name base-doc-map)))
+                    base-doc-map))]
     (if (empty? doc-map)
       (str "# Documentation Not Found\n\n"
            "_No documentation available for:_ " (format-inline-code (str x)) "\n")

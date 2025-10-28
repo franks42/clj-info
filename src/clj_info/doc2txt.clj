@@ -26,10 +26,10 @@
              m0)
         m (if-let [n (:fqname m1)]
             (if (re-find #"^clojure" (str n))
-              (assoc m1 :clojuredocs-ref (str "https://clojuredocs.org/clojure_core/" n))
+              (assoc m1 :clojuredocs-ref (str "https://clojuredocs.org/" n))
               m1)
             (if (:special-form m1)
-              (assoc m1 :clojuredocs-ref (str "https://clojuredocs.org/clojure_core/clojure.core/" (:name m1)))
+              (assoc m1 :clojuredocs-ref (str "https://clojuredocs.org/clojure.core/" (:name m1)))
               m1))
 
         title (if m

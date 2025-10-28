@@ -45,7 +45,15 @@
   - Metadata and structure information
   - Full fidelity to the original doc-map"
   [x]
-  (let [doc-map (get-docs-map x)]
+  (let [base-doc-map (get-docs-map x)
+        ;; Add ClojureDocs URL similar to other formatters
+        doc-map (if-let [n (:fqname base-doc-map)]
+                  (if (re-find #"^clojure" (str n))
+                    (assoc base-doc-map :clojuredocs-ref (str "https://clojuredocs.org/" n))
+                    base-doc-map)
+                  (if (:special-form base-doc-map)
+                    (assoc base-doc-map :clojuredocs-ref (str "https://clojuredocs.org/clojure.core/" (:name base-doc-map)))
+                    base-doc-map))]
     (if (empty? doc-map)
       {:clj-info/error "No documentation found"
        :clj-info/target (str x)
@@ -70,8 +78,16 @@
   - String representations for Clojure-specific types
   - Metadata about the documentation source"
   [x]
-  (let [doc-map (get-docs-map x)]
-    (if (empty? doc-map)
+  (let [base-doc-map (get-docs-map x)
+        ;; Add ClojureDocs URL similar to other formatters
+        doc-map (if-let [n (:fqname base-doc-map)]
+                  (if (re-find #"^clojure" (str n))
+                    (assoc base-doc-map :clojuredocs-ref (str "https://clojuredocs.org/" n))
+                    base-doc-map)
+                  (if (:special-form base-doc-map)
+                    (assoc base-doc-map :clojuredocs-ref (str "https://clojuredocs.org/clojure.core/" (:name base-doc-map)))
+                    base-doc-map))]
+    (if (empty? base-doc-map)
       {:clj-info/error "No documentation found"
        :clj-info/target (str x)
        :clj-info/format "json"

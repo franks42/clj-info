@@ -89,7 +89,15 @@
 (defn doc->rich
   "Convert documentation info to rich terminal format with colors and formatting."
   [x]
-  (let [doc-map (get-docs-map x)
+  (let [base-doc-map (get-docs-map x)
+        ;; Add ClojureDocs URL similar to other formatters
+        doc-map (if-let [n (:fqname base-doc-map)]
+                  (if (re-find #"^clojure" (str n))
+                    (assoc base-doc-map :clojuredocs-ref (str "https://clojuredocs.org/" n))
+                    base-doc-map)
+                  (if (:special-form base-doc-map)
+                    (assoc base-doc-map :clojuredocs-ref (str "https://clojuredocs.org/clojure.core/" (:name base-doc-map)))
+                    base-doc-map))
         {:keys [name fqname ns arglists doc url file line column object-type-str]} doc-map
         
         ;; Header with function/object name and type
@@ -106,7 +114,8 @@
                     file (conj ["File" file])
                     line (conj ["Line" line])
                     column (conj ["Column" column])
-                    url (conj ["URL" url]))
+                    url (conj ["Javadoc" url])
+                    (:clojuredocs-ref doc-map) (conj ["ClojureDocs" (:clojuredocs-ref doc-map)]))
         
         ;; Build the rich output
         sections [(make-box header-content :width 70)
