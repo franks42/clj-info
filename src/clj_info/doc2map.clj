@@ -15,6 +15,7 @@
   (:require [clj-info.doc-info-EN]
             [clojure.repl]
             [clojure.set]
+            [clojure.string]
             [clj-info.platform :as platform]))
 
 
@@ -149,6 +150,36 @@
   docsmap
   (docs-map [astring]
     {:object-type-str "Multimethod"}))
+
+;; SCI compatibility - extend protocol for sci.lang.Var
+(when platform/bb?
+  (try
+    (let [sci-var-class (Class/forName "sci.lang.Var")]
+      (extend sci-var-class
+        docsmap
+        {:docs-map (fn [v]
+                     ;; Same implementation as clojure.lang.Var but for SCI vars
+                     (let [v-meta (meta v)
+                           v-name (platform/var->symbol v)
+                           arglist-fn (fn [arglists]
+                                        (when arglists
+                                          (clojure.string/join " " 
+                                                               (map str arglists))))]
+                       (merge v-meta
+                              {:name v-name
+                               :fqname (str v-name)
+                               :var true
+                               :arglists-str (arglist-fn (:arglists v-meta))
+                               :object-type-str "Var"})))}))
+    (catch Exception _ nil)))
+
+;; Default implementation for any Object - provides fallback for function objects
+(extend-type Object
+  docsmap
+  (docs-map [obj]
+    {:name (str obj)
+     :object-type-str (if (fn? obj) "Function" "Object") 
+     :no-docs "No documentation available - try passing the symbol instead of the function"}))
 
 ;;
 
