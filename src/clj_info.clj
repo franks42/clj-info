@@ -11,10 +11,15 @@
   in different formats."
   (:require [clojure.repl]
             [clojure.java.shell])
-  (:use [clj-info.doc2txt :only [doc2txt]]
-        [clj-info.doc2map :only [get-docs-map]]
-        [clj-info.doc2html :only [doc2html]]
-        [clojure.java.browse]))
+  (:require [clj-info.doc2txt :refer [doc2txt]]
+            [clj-info.doc2map :refer [get-docs-map]]
+            ; [clj-info.doc2html :refer [doc2html]] ; Temporarily disabled while fixing Hiccup 2 syntax
+            [clj-info.doc2rich :refer [doc->rich]]
+            [clj-info.doc2md :refer [doc->md]]
+            [clj-info.doc2data :refer [doc->edn doc->json doc->edn-str doc->json-str doc->data]]
+            [clj-info.platform :as platform]
+            ; [clojure.java.browse :refer [browse-url]] ; Commented out for Babashka compatibility
+            ))
 
 (def clj-info-version "0.4.2")
 
@@ -90,10 +95,12 @@
     (let [f (str (System/getProperty "user.home")
                   "/.cljsh_output_dir/cljsh_output.html")]
       (bdoc* w f)
-      (browse-url (str "file://" f))
+      ; TODO: Add back browse-url functionality for JVM
+      (println "HTML file generated at:" f)
       (symbol "")))
-  ([w f & f-opts]
-    (if f (apply spit f (doc2html w) f-opts) (println (doc2html w)))))
+  ([_w _f & _f-opts]
+   (println "HTML documentation temporarily disabled while fixing Hiccup 2 syntax")
+   (symbol "")))
 
 
 (defmacro bdoc
@@ -114,16 +121,21 @@
   (makes it easier to use at the repl, especially for novice users)"
   [name-str-or-sym]
   (let [name-sym (symbol name-str-or-sym)]
-  (if-let [special-name ('{& fn catch try finally try} name-sym)]
-    ;; using private functions from clojure.repl... not good...
-    (#'clojure.repl/print-doc (#'clojure.repl/special-doc special-name))
-    (cond
-      (#'clojure.repl/special-doc-map name-sym)
-        (#'clojure.repl/print-doc (#'clojure.repl/special-doc name-sym))
-      (find-ns name-sym)
-        (#'clojure.repl/print-doc (#'clojure.repl/namespace-doc (find-ns name-sym)))
-      (resolve name-sym)
-        (#'clojure.repl/print-doc (meta (resolve name-sym)))))))
+    (if-let [special-name ('{& fn catch try finally try} name-sym)]
+    ;; Handle special forms with platform compatibility
+      (when-let [special-doc-info (platform/clojure-repl-special-doc special-name)]
+        (platform/clojure-repl-print-doc special-doc-info))
+      (cond
+        (platform/clojure-repl-special-doc-map name-sym)
+        (when-let [special-doc-info (platform/clojure-repl-special-doc name-sym)]
+          (platform/clojure-repl-print-doc special-doc-info))
+        
+        (find-ns name-sym)
+        (when-let [ns-doc-info (platform/clojure-repl-namespace-doc (find-ns name-sym))]
+          (platform/clojure-repl-print-doc ns-doc-info))
+        
+        (resolve name-sym)
+        (platform/clojure-repl-print-doc (meta (resolve name-sym)))))))
 
 (defmacro edoc
   "Prints documentation for a var or special form given its name.

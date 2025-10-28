@@ -12,12 +12,10 @@
   clojure-entities. Functions to render doc-info in either text or
   html. More user-friendly \"clojure.repl/doc\"-like macros/functions
   to present doc-info in various representations"
-	(:require  [clj-info.doc-info-EN]
-	           [clojure.string :as s]
-	           [hiccup.core :as h]
-	           [clojure.repl]
-	           [clojure.set]
-	           [clojure.java.javadoc]))
+  (:require [clj-info.doc-info-EN]
+            [clojure.repl]
+            [clojure.set]
+            [clj-info.platform :as platform]))
 
 
 (defprotocol docsmap
@@ -30,10 +28,16 @@
   docsmap
   (docs-map [o]
     (if (:on-interface o)
-      {:protocol-def true
-       :object-type-str "Protocol"
-       :sigs (:sigs o),
-       :extenders (extenders o)}
+      (let [extender-info (when-not platform/bb?
+                            ;; extenders function may not be available in Babashka
+                            (try 
+                              (when-let [extenders-fn (resolve 'extenders)]
+                                (extenders-fn o))
+                              (catch Exception _ nil)))]
+        {:protocol-def true
+         :object-type-str "Protocol"
+         :sigs (:sigs o),
+         :extenders extender-info})
       {:object-type-str "Var => clojure.lang.PersistentArrayMap"
        :var-def true})))
 
@@ -47,10 +51,17 @@
 (extend-type java.lang.Class
   docsmap
   (docs-map [jtype]
-    {:name (.getName jtype)
-     :java-class true
-     :object-type-str "java.lang.Class"
-     :url (#'clojure.java.javadoc/javadoc-url (.getName jtype))}))
+    (let [class-name (.getName jtype)
+          javadoc-url (when-not platform/bb?
+                        ;; Only try to use clojure.java.javadoc on JVM
+                        (try
+                          (require 'clojure.java.javadoc)
+                          ((resolve 'clojure.java.javadoc/javadoc-url) class-name)
+                          (catch Exception _ nil)))]
+      {:name class-name
+       :java-class true
+       :object-type-str "java.lang.Class"
+       :url javadoc-url})))
 
 
 (extend-type clojure.lang.Namespace
@@ -100,20 +111,37 @@
 (extend-type clojure.lang.Symbol
   docsmap
   (docs-map [s]
-    (cond
-      (#'clojure.repl/special-doc-map s)
-      ;; I know that clojure.repl/special-doc-map is private...
-        (assoc (#'clojure.repl/special-doc-map s)
-                :name (name s)
-                :object-type-str "Special Form"
-                :special-form true)
-      (special-symbol? s)
+    (let [;; Try to get special doc info on JVM only
+          special-doc-info (when (not platform/bb?)
+                            (try 
+                              (when-let [special-doc-map-var (resolve 'clojure.repl/special-doc-map)]
+                                (@special-doc-map-var s))
+                              (catch Exception _ nil)))]
+      (cond
+        ;; Found special doc info
+        special-doc-info
+        (assoc special-doc-info
+               :name (name s)
+               :object-type-str "Special Form"
+               :special-form true)
+        
+        ;; Check if it's a special symbol (basic hardcoded list for Babashka compatibility)
+        (#{'. 'def 'do 'if 'let 'var 'quote 'try 'catch 'throw 'finally 'loop 'recur 'fn 'set!} s)
         {:name (name s)
-         :object-type-str "Special Symbol"
+         :object-type-str "Special Symbol" 
          :special-form true}
-     (find-ns s) (docs-map (find-ns s))
-     (try (resolve s) (catch Exception e)) (when (extends? docsmap (type (resolve s)))
-                    (docs-map (resolve s))))))
+         
+        ;; Is it a namespace?
+        (find-ns s) 
+        (docs-map (find-ns s))
+        
+        ;; Try to resolve as var/class
+        (and (try (resolve s) (catch Exception _ nil))
+             (extends? docsmap (type (resolve s))))
+        (docs-map (resolve s))
+        
+        ;; Default case
+        :else nil))))
 
 
 (extend-type clojure.lang.MultiFn
