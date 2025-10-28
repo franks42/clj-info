@@ -1,10 +1,12 @@
-(defproject clj-info "0.4.2"
+(defproject clj-info "0.5.0"
   :description "Enhanced clojure doc-info facility for use in REPL and beyond."
   :url "https://github.com/franks42/clj-info"
   :license {:name "Eclipse Public License"
             :url "https://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.12.0"]
-                 [hiccup "1.0.5"]]
+  :dependencies [[org.clojure/clojure "1.12.1"]
+                 [hiccup "2.0.0"]
+                 [io.aviso/pretty "1.4.4"]
+                 [org.clojure/data.json "2.5.1"]]
 ;;  	:dev-dependencies [[lein-marginalia "0.9.2"]
 ;;  	                   [codox "0.10.8"]]
   )

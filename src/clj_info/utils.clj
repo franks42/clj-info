@@ -11,10 +11,7 @@
   in different formats."
   (:require [clojure.repl]
             [clojure.java.shell])
-  (:use [clj-info.doc2txt :only [doc2txt]]
-        [clj-info.doc2map :only [get-docs-map]]
-        [clj-info.doc2html :only [doc2html]]
-        [clojure.java.browse]))
+  (:use [clojure.java.browse]))
 
 ;;;;
 

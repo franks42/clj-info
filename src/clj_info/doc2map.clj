@@ -74,7 +74,7 @@
 
 
 (defn all-other-fqv [v]
-  (let [s (.sym v)]
+  (let [s (platform/var->symbol v)]
     (clojure.set/difference
       (clojure.set/select #(not (nil? %))
                           (set (for [n (all-ns)] (ns-resolve n s))))
@@ -101,7 +101,8 @@
       (cond
         (:protocol m) (assoc m :protocol-member-fn true
                                :object-type-str "Protocol Interface/Function")
-        (extends? docsmap (type @v)) (merge m (docs-map @v))
+        (and (not platform/bb?) 
+             (extends? docsmap (type @v))) (merge m (docs-map @v))
         true (if (get m :object-type-str)
                m
                (assoc m :var-def true
