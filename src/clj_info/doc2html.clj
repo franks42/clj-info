@@ -10,7 +10,8 @@
   (:require [clojure.string :as s]
             [hiccup2.core :as h]
             [clojure.repl]
-            [clj-info.doc2map :refer [get-docs-map]]))
+            [clj-info.doc2map :refer [get-docs-map]]
+            [clj-info.clojuredocs :as cljdocs]))
 
 ;; html-docs generation from info returned from docs-map
 
@@ -46,10 +47,34 @@
 (defn ul [coll] 
   [:ul (for [x (map str coll)] [:li x])])
 
+(defn- format-clojuredocs-example
+  "Format a single ClojureDocs example for HTML display."
+  [idx example]
+  [:div.cljdoc-example
+   [:h5 (str "Example " (inc idx) ":")]
+   [:pre.cljdoc-doc-body (if (string? example)
+                           example
+                           (:body example example))]])
+
+(defn- format-clojuredocs-note
+  "Format a single ClojureDocs note for HTML display."
+  [idx note]
+  [:div.cljdoc-note
+   [:h5 (str "Note " (inc idx) ":")]
+   [:pre.cljdoc-doc-body (if (string? note)
+                           note
+                           (:body note note))]])
+
 (defn doc2html
-  "generates html-page for the docs-map info obtained for word w"
-  [w]
-  (let [m0  (get-docs-map w)
+  "Generates html-page for the docs-map info obtained for word w.
+  
+  Options (optional map as second argument):
+    :include-clojuredocs - If true, includes ClojureDocs examples, see-alsos,
+                          and notes (default: false)"
+  ([w]
+   (doc2html w {}))
+  ([w opts]
+   (let [m0  (get-docs-map w opts)
         m1  (if (:special-form m0)
               (assoc m0 :url
                      (if (contains? m0 :url)
@@ -95,6 +120,24 @@
                    [:h4 "Documentation"]
                    [:div.cljdoc-doc-body [:pre (str "  " (:doc m))]]])
 
+                (when-let [examples (:clojuredocs-examples m)]
+                  [:div.cljdoc-sub-heading
+                   [:h4 "ClojureDocs Examples"]
+                   (map-indexed format-clojuredocs-example examples)])
+
+                (when-let [see-alsos (:clojuredocs-see-alsos m)]
+                  [:div.cljdoc-sub-heading
+                   [:h4 "See Also"]
+                   [:ul (for [sa see-alsos]
+                          [:li (if (map? sa)
+                                 (str (:ns sa) "/" (:name sa))
+                                 (str sa))])]])
+
+                (when-let [notes (:clojuredocs-notes m)]
+                  [:div.cljdoc-sub-heading
+                   [:h4 "ClojureDocs Notes"]
+                   (map-indexed format-clojuredocs-note notes)])
+
                 (when (:sigs m)
                   [:div
                    [:h4 "Interface Signatures:"]
@@ -135,12 +178,18 @@
 
                [:h2 (str "Sorry, no doc-info for \"" w "\"")])]
 
-    (str (h/html [:html [:head *clj-info-ccs*] [:body *clj-body-js* [:div {:class "cljdoc-entry"} page]]]))))
+    (str (h/html [:html [:head *clj-info-ccs*] [:body *clj-body-js* [:div {:class "cljdoc-entry"} page]]])))))
 
 (defn doc2simple-html
-  "generates simple html-page for the docs-map info obtained for word w"
-  [w]
-  (let [m0  (get-docs-map w)
+  "Generates simple html-page for the docs-map info obtained for word w.
+  
+  Options (optional map as second argument):
+    :include-clojuredocs - If true, includes ClojureDocs examples, see-alsos,
+                          and notes (default: false)"
+  ([w]
+   (doc2simple-html w {}))
+  ([w opts]
+   (let [m0  (get-docs-map w opts)
         m1  (if (:special-form m0)
               (assoc m0 :url
                      (if (contains? m0 :url)
@@ -186,6 +235,24 @@
                    [:h3 "Documentation"]
                    [:pre (str "  " (:doc m))]])
 
+                (when-let [examples (:clojuredocs-examples m)]
+                  [:div
+                   [:h3 "ClojureDocs Examples"]
+                   (map-indexed format-clojuredocs-example examples)])
+
+                (when-let [see-alsos (:clojuredocs-see-alsos m)]
+                  [:div
+                   [:h3 "See Also"]
+                   [:ul (for [sa see-alsos]
+                          [:li (if (map? sa)
+                                 (str (:ns sa) "/" (:name sa))
+                                 (str sa))])]])
+
+                (when-let [notes (:clojuredocs-notes m)]
+                  [:div
+                   [:h3 "ClojureDocs Notes"]
+                   (map-indexed format-clojuredocs-note notes)])
+
                 (when (:sigs m) 
                   [:div
                    [:h3 "Interface Signatures:"]
@@ -207,4 +274,4 @@
                [:h2 (str "Sorry, no doc-info for \"" w "\"")])]
 
     (println w m)
-    (str (h/html [:html page]))))
+    (str (h/html [:html page])))))

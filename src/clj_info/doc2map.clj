@@ -16,7 +16,8 @@
 	           [clojure.string :as s]
 	           [clojure.repl]
 	           [clojure.set]
-	           [clj-info.platform :as platform]))
+	           [clj-info.platform :as platform]
+	           [clj-info.clojuredocs :as cljdocs]))
 
 ;; Conditionally require clojure.java.javadoc only on JVM (not available in BB)
 (when-not platform/bb?
@@ -141,9 +142,22 @@
 
 
 (defn get-docs-map
-  "Entry function to obtain map with doc-info for object n."
-  [n]
-  (let [s (if (string? n) (symbol n) n)]
-    (merge-newdocs (docs-map s) s)))
+  "Entry function to obtain map with doc-info for object n.
+  
+  Options (optional map as second argument):
+    :include-clojuredocs - If true, enriches doc-map with ClojureDocs examples,
+                          see-alsos, and notes (default: false)
+  
+  Examples:
+    (get-docs-map 'map)
+    (get-docs-map 'map {:include-clojuredocs true})"
+  ([n]
+   (get-docs-map n {}))
+  ([n opts]
+   (let [s (if (string? n) (symbol n) n)
+         base-map (merge-newdocs (docs-map s) s)]
+     (if (:include-clojuredocs opts)
+       (cljdocs/enrich-doc-map base-map)
+       base-map))))
 
 

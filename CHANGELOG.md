@@ -5,6 +5,53 @@ All notable changes to clj-info will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-01-28 - ClojureDocs Content Integration
+
+### Added
+- **Full ClojureDocs content integration** - Community examples, see-alsos, and notes
+  - New `clj-info.clojuredocs` namespace for fetching and caching ClojureDocs content
+  - Hybrid file + memory caching with configurable TTL (default 1 hour)
+  - Cache persistence across sessions in `~/.clj-info/cache/`
+  - Graceful fallback to stale cache when network unavailable
+  - Works in both Babashka and JVM environments
+
+- **Enhanced documentation output**
+  - `get-docs-map` now accepts `:include-clojuredocs true` option
+  - HTML formatters (`doc2html`, `doc2simple-html`) display ClojureDocs examples, see-alsos, and notes
+  - Community-contributed examples integrated alongside official documentation
+
+### Changed
+- **New dependency**: `org.babashka/http-client` for HTTP requests (built-in for Babashka)
+- `get-docs-map` now supports optional second argument for configuration
+- HTML output formatters now support optional configuration map
+
+### Technical Details
+- ClojureDocs export sourced from https://github.com/clojure-emacs/clojuredocs-export-edn
+- ~2MB EDN file cached locally for fast access
+- File cache survives process restarts (critical for short-lived REPL sessions)
+- Memory cache for ultra-fast access within current session
+- Automatic cache refresh after TTL expiration
+
+### Examples
+```clojure
+;; Get documentation with ClojureDocs examples
+(require '[clj-info.doc2map :as doc2map])
+(doc2map/get-docs-map 'map {:include-clojuredocs true})
+;; => {:clojuredocs-examples [...] :clojuredocs-see-alsos [...] :clojuredocs-notes [...]}
+
+;; Generate HTML with community examples
+(require '[clj-info.doc2html :as doc2html])
+(doc2html/doc2html 'reduce {:include-clojuredocs true})
+;; => HTML with 24 community examples, 8 see-alsos, and 3 notes
+```
+
+## [0.5.2] - 2024-11-15 - Hiccup 2 Compatibility Fix
+
+### Fixed
+- **Hiccup 2.0.0 double-escaping bug** - Removed manual HTML escaping
+- **Cross-platform compatibility** - Works in both Babashka and JVM
+- **Namespace correction** - Fixed `doc2html-new` to `doc2html`
+
 ## [0.5.1] - 2024-10-28 - ClojureDocs Integration & Documentation Update
 
 ### Added
