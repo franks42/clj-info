@@ -12,11 +12,15 @@
   clojure-entities. Functions to render doc-info in either text or
   html. More user-friendly \"clojure.repl/doc\"-like macros/functions
   to present doc-info in various representations"
-  (:require [clj-info.doc-info-EN]
-            [clojure.repl]
-            [clojure.set]
-            [clojure.string]
-            [clj-info.platform :as platform]))
+	(:require  [clj-info.doc-info-EN]
+	           [clojure.string :as s]
+	           [clojure.repl]
+	           [clojure.set]
+	           [clj-info.platform :as platform]))
+
+;; Conditionally require clojure.java.javadoc only on JVM (not available in BB)
+(when-not platform/bb?
+  (require '[clojure.java.javadoc]))
 
 
 (defprotocol docsmap
@@ -29,16 +33,11 @@
   docsmap
   (docs-map [o]
     (if (:on-interface o)
-      (let [extender-info (when-not platform/bb?
-                            ;; extenders function may not be available in Babashka
-                            (try 
-                              (when-let [extenders-fn (resolve 'extenders)]
-                                (extenders-fn o))
-                              (catch Exception _ nil)))]
-        {:protocol-def true
-         :object-type-str "Protocol"
-         :sigs (:sigs o),
-         :extenders extender-info})
+      {:protocol-def true
+       :object-type-str "Protocol"
+       :sigs (:sigs o),
+       :extenders (when-let [ext-fn (resolve 'extenders)]
+                    (ext-fn o))}
       {:object-type-str "Var => clojure.lang.PersistentArrayMap"
        :var-def true})))
 
@@ -52,17 +51,12 @@
 (extend-type java.lang.Class
   docsmap
   (docs-map [jtype]
-    (let [class-name (.getName jtype)
-          javadoc-url (when-not platform/bb?
-                        ;; Only try to use clojure.java.javadoc on JVM
-                        (try
-                          (require 'clojure.java.javadoc)
-                          ((resolve 'clojure.java.javadoc/javadoc-url) class-name)
-                          (catch Exception _ nil)))]
-      {:name class-name
-       :java-class true
-       :object-type-str "java.lang.Class"
-       :url javadoc-url})))
+    {:name (.getName jtype)
+     :java-class true
+     :object-type-str "java.lang.Class"
+     :url (when-not platform/bb?
+            (when-let [javadoc-url (resolve 'clojure.java.javadoc/javadoc-url)]
+              (@javadoc-url (.getName jtype))))}))
 
 
 (extend-type clojure.lang.Namespace
@@ -102,9 +96,8 @@
       (cond
         (:protocol m) (assoc m :protocol-member-fn true
                                :object-type-str "Protocol Interface/Function")
-        (and (not platform/bb?) 
-             (extends? docsmap (type @v))) (merge m (docs-map @v))
-        true (if (get m :object-type-str)
+        (and (not platform/bb?) (extends? docsmap (type @v))) (merge m (docs-map @v))
+        :else (if (get m :object-type-str)
                m
                (assoc m :var-def true
                         :object-type-str (str "Var => " (or (type @v) "nil"))))))))
@@ -113,73 +106,25 @@
 (extend-type clojure.lang.Symbol
   docsmap
   (docs-map [s]
-    (let [;; Try to get special doc info on JVM only
-          special-doc-info (when (not platform/bb?)
-                            (try 
-                              (when-let [special-doc-map-var (resolve 'clojure.repl/special-doc-map)]
-                                (@special-doc-map-var s))
-                              (catch Exception _ nil)))]
-      (cond
-        ;; Found special doc info
-        special-doc-info
-        (assoc special-doc-info
-               :name (name s)
-               :object-type-str "Special Form"
-               :special-form true)
-        
-        ;; Check if it's a special symbol (basic hardcoded list for Babashka compatibility)
-        (#{'. 'def 'do 'if 'let 'var 'quote 'try 'catch 'throw 'finally 'loop 'recur 'fn 'set!} s)
+    (cond
+      (platform/clojure-repl-special-doc-map s)
+        (assoc (platform/clojure-repl-special-doc-map s)
+                :name (name s)
+                :object-type-str "Special Form"
+                :special-form true)
+      (special-symbol? s)
         {:name (name s)
-         :object-type-str "Special Symbol" 
+         :object-type-str "Special Symbol"
          :special-form true}
-         
-        ;; Is it a namespace?
-        (find-ns s) 
-        (docs-map (find-ns s))
-        
-        ;; Try to resolve as var/class
-        (and (try (resolve s) (catch Exception _ nil))
-             (extends? docsmap (type (resolve s))))
-        (docs-map (resolve s))
-        
-        ;; Default case
-        :else nil))))
+     (find-ns s) (docs-map (find-ns s))
+     (try (resolve s) (catch Exception _)) (when (extends? docsmap (type (resolve s)))
+                    (docs-map (resolve s))))))
 
 
 (extend-type clojure.lang.MultiFn
   docsmap
   (docs-map [astring]
     {:object-type-str "Multimethod"}))
-
-;; SCI compatibility - extend protocol for sci.lang.Var
-(when platform/bb?
-  (try
-    (let [sci-var-class (Class/forName "sci.lang.Var")]
-      (extend sci-var-class
-        docsmap
-        {:docs-map (fn [v]
-                     ;; Same implementation as clojure.lang.Var but for SCI vars
-                     (let [v-meta (meta v)
-                           v-name (platform/var->symbol v)
-                           arglist-fn (fn [arglists]
-                                        (when arglists
-                                          (clojure.string/join " " 
-                                                               (map str arglists))))]
-                       (merge v-meta
-                              {:name v-name
-                               :fqname (str v-name)
-                               :var true
-                               :arglists-str (arglist-fn (:arglists v-meta))
-                               :object-type-str "Var"})))}))
-    (catch Exception _ nil)))
-
-;; Default implementation for any Object - provides fallback for function objects
-(extend-type Object
-  docsmap
-  (docs-map [obj]
-    {:name (str obj)
-     :object-type-str (if (fn? obj) "Function" "Object") 
-     :no-docs "No documentation available - try passing the symbol instead of the function"}))
 
 ;;
 

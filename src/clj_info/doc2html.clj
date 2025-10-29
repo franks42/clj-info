@@ -6,12 +6,11 @@
 ;; the terms of this license.
 ;; You must not remove this notice, or any other, from this software.
 
-(ns clj-info.doc2html-new
+(ns clj-info.doc2html
   (:require [clojure.string :as s]
             [hiccup2.core :as h]
             [clojure.repl]
-            [clj-info.doc2map :refer [get-docs-map]]
-            [clj-info.platform :as platform]))
+            [clj-info.doc2map :refer [get-docs-map]]))
 
 ;; html-docs generation from info returned from docs-map
 
@@ -45,7 +44,7 @@
     "window.onload = function() { scrollTo(0,0);}"])))
 
 (defn ul [coll] 
-  [:ul (for [x (map platform/html-escape (map str coll))] [:li x])])
+  [:ul (for [x (map str coll)] [:li x])])
 
 (defn doc2html
   "generates html-page for the docs-map info obtained for word w"
@@ -94,7 +93,7 @@
                 (when (:doc m) 
                   [:div.cljdoc-sub-heading 
                    [:h4 "Documentation"]
-                   [:div.cljdoc-doc-body [:pre (platform/html-escape (str "  " (:doc m)))]]])
+                   [:div.cljdoc-doc-body [:pre (str "  " (:doc m))]]])
 
                 (when (:sigs m)
                   [:div
@@ -132,7 +131,7 @@
                                            (clojure.repl/source-fn (symbol w)))]
                   [:div
                    [:h4.cljdoc-source-heading "Source: "]
-                   [:div.cljdoc-source-body [:pre (platform/html-escape source-str)]]])]
+                   [:div.cljdoc-source-body [:pre source-str]]])]
 
                [:h2 (str "Sorry, no doc-info for \"" w "\"")])]
 
@@ -185,7 +184,7 @@
                 (when (:doc m) 
                   [:div
                    [:h3 "Documentation"]
-                   [:pre (platform/html-escape (str "  " (:doc m)))]])
+                   [:pre (str "  " (:doc m))]])
 
                 (when (:sigs m) 
                   [:div

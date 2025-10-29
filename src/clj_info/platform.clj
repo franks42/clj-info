@@ -1,6 +1,5 @@
 ;; Platform detection and graceful feature-fallbacks for clj-info
-(ns clj-info.platform
-  (:require [clojure.string :as str]))
+(ns clj-info.platform)
 
 (def bb?
   "True when running under Babashka (native)."
@@ -12,7 +11,7 @@
   (try (require sym) true (catch Throwable _ false)))
 
 (def ansi-available (try-require 'io.aviso.ansi))
-(def hiccup-available (try-require 'hiccup.core))
+(def hiccup-available (try-require 'hiccup2.core))
 (def clj-data-json-available (try-require 'clojure.data.json))
 ;; Babashka has Cheshire built-in (aliased as 'json), not babashka.json
 (def bb-cheshire-available (and bb? (try-require 'cheshire.core)))
@@ -74,23 +73,6 @@
 
 (defn ansi-available?
   [] ansi-available)
-
-(defn html-escape
-  "HTML-escape text for safe inclusion in HTML.
-   
-   Based on research: Hiccup 2 should auto-escape, but Babashka's built-in 
-   Hiccup may not fully implement this. Manual escaping is the most reliable
-   approach across all environments.
-   
-   This function always performs manual HTML entity escaping to ensure
-   consistent and secure behavior."
-  [text]
-  (-> text
-      (str/replace "&" "&amp;")   ; Must be first to avoid double-escaping
-      (str/replace "<" "&lt;")
-      (str/replace ">" "&gt;")
-      (str/replace "\"" "&quot;")
-      (str/replace "'" "&#x27;")))
 
 (defn safe-private-var
   "Safely resolve a private var, returning nil if not available (e.g., in Babashka)."
